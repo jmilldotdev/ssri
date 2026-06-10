@@ -12,9 +12,10 @@ Use pnpm.
 
 ```bash
 pnpm install
-pnpm dev
+pnpm api
 pnpm sooth preset golden-cross --symbol SPY --out examples/spy_golden_cross.sooth.json
 pnpm sooth thesis "Buy NVDA when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle" --symbol NVDA --iching --out examples/nvda_momentum.sooth.json
+pnpm sooth eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json
 ```
 
 ## Repository map
@@ -25,6 +26,7 @@ packages/core/src/        schema, indicators, evaluator, presets, I Ching
 packages/data/src/        market data providers and fixture loading
 packages/data/fixtures/   cached CSVs for demo data
 packages/cli/src/         CLI entrypoint
+packages/api/src/         thin HTTP API for frontend integration
 examples/                 generated demo canvases
 .agents/skills/           repository skills for coding agents
 ```
@@ -98,10 +100,28 @@ When working in `packages/cli`:
 Required commands:
 
 ```bash
-sooth thesis "..." --symbol NVDA --iching --out examples/nvda_momentum.sooth.json
-sooth preset golden-cross --symbol SPY --out examples/spy_golden_cross.sooth.json
-sooth eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json
+pnpm sooth thesis "..." --symbol NVDA --iching --out examples/nvda_momentum.sooth.json
+pnpm sooth preset golden-cross --symbol SPY --out examples/spy_golden_cross.sooth.json
+pnpm sooth eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json
 ```
+
+## API guidance
+
+The API is intentionally thin and calls the same core functions as the CLI.
+
+Run it with:
+
+```bash
+pnpm api
+```
+
+Endpoints:
+
+- `GET /health`
+- `GET /v1/data/ohlcv?symbol=NVDA&range=2y`
+- `POST /v1/canvases/from-thesis` with `{ "thesis": "...", "symbol": "NVDA", "iching": true }`
+- `POST /v1/canvases/preset` with `{ "name": "golden-cross", "symbol": "SPY" }`
+- `POST /v1/canvases/evaluate` with either a canvas body or `{ "canvas": ... }`
 
 ## Data guidance
 

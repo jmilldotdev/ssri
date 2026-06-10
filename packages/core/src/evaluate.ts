@@ -73,6 +73,8 @@ export async function evaluateCanvas(canvasInput: SoothsayerCanvas, loadCandles:
   }
 
   const entry = [...values.values()].reverse().find((value) => value.kind === "condition") as { kind: "condition"; value: boolean[] } | undefined;
+  const backtestNode = canvas.nodes.find((node) => node.type === "backtest.longOnly");
+  const holdDays = numberParam(backtestNode?.params.holdDays, 20);
   const markers = entry?.value.map((active, index) => active && candles[index] ? {
     time: candles[index].date,
     position: "belowBar" as const,
@@ -83,7 +85,7 @@ export async function evaluateCanvas(canvasInput: SoothsayerCanvas, loadCandles:
   return {
     canvas,
     chart: { candles, overlays, markers },
-    stats: backtest(candles, entry?.value ?? [], 20),
+    stats: backtest(candles, entry?.value ?? [], holdDays),
     oracle: [...values.values()].find((value) => value.kind === "oracle")?.value
   };
 }

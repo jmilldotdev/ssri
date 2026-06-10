@@ -1,0 +1,258 @@
+{
+  "version": "sooth.canvas.v1",
+  "meta": {
+    "title": "AAPL momentum thesis",
+    "thesis": "Buy AAPL when SMA20 crosses above SMA50 and RSI is below 70.",
+    "createdBy": "cli"
+  },
+  "nodes": [
+    {
+      "id": "price",
+      "type": "data.ohlcv",
+      "label": "AAPL daily candles",
+      "params": {
+        "symbol": "AAPL",
+        "provider": "fixture",
+        "range": "2y"
+      },
+      "position": {
+        "x": 0,
+        "y": 160
+      }
+    },
+    {
+      "id": "close",
+      "type": "series.close",
+      "label": "Close price",
+      "params": {},
+      "position": {
+        "x": 220,
+        "y": 160
+      }
+    },
+    {
+      "id": "sma20",
+      "type": "indicator.sma",
+      "label": "SMA 20",
+      "params": {
+        "period": 20
+      },
+      "position": {
+        "x": 460,
+        "y": 70
+      }
+    },
+    {
+      "id": "sma50",
+      "type": "indicator.sma",
+      "label": "SMA 50",
+      "params": {
+        "period": 50
+      },
+      "position": {
+        "x": 460,
+        "y": 250
+      }
+    },
+    {
+      "id": "cross",
+      "type": "condition.crossesAbove",
+      "label": "SMA20 crosses above SMA50",
+      "params": {},
+      "position": {
+        "x": 720,
+        "y": 140
+      }
+    },
+    {
+      "id": "rsi",
+      "type": "indicator.rsi",
+      "label": "RSI 28",
+      "params": {
+        "period": 28
+      },
+      "position": {
+        "x": 460,
+        "y": 420
+      }
+    },
+    {
+      "id": "notOverbought",
+      "type": "condition.lt",
+      "label": "RSI below 70",
+      "params": {
+        "threshold": 70
+      },
+      "position": {
+        "x": 720,
+        "y": 380
+      }
+    },
+    {
+      "id": "entry",
+      "type": "logic.all",
+      "label": "Entry: all true",
+      "params": {},
+      "position": {
+        "x": 960,
+        "y": 210
+      }
+    },
+    {
+      "id": "markers",
+      "type": "signal.buyMarkers",
+      "label": "Buy markers",
+      "params": {},
+      "position": {
+        "x": 1200,
+        "y": 120
+      }
+    },
+    {
+      "id": "bt",
+      "type": "backtest.longOnly",
+      "label": "Tiny backtest",
+      "params": {
+        "holdDays": 20
+      },
+      "position": {
+        "x": 1200,
+        "y": 300
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": {
+        "node": "price",
+        "port": "ohlcv"
+      },
+      "to": {
+        "node": "close",
+        "port": "ohlcv"
+      }
+    },
+    {
+      "id": "e2",
+      "from": {
+        "node": "close",
+        "port": "series"
+      },
+      "to": {
+        "node": "sma20",
+        "port": "series"
+      }
+    },
+    {
+      "id": "e3",
+      "from": {
+        "node": "close",
+        "port": "series"
+      },
+      "to": {
+        "node": "sma50",
+        "port": "series"
+      }
+    },
+    {
+      "id": "e4",
+      "from": {
+        "node": "sma20",
+        "port": "series"
+      },
+      "to": {
+        "node": "cross",
+        "port": "a"
+      }
+    },
+    {
+      "id": "e5",
+      "from": {
+        "node": "sma50",
+        "port": "series"
+      },
+      "to": {
+        "node": "cross",
+        "port": "b"
+      }
+    },
+    {
+      "id": "e6",
+      "from": {
+        "node": "close",
+        "port": "series"
+      },
+      "to": {
+        "node": "rsi",
+        "port": "series"
+      }
+    },
+    {
+      "id": "e7",
+      "from": {
+        "node": "rsi",
+        "port": "series"
+      },
+      "to": {
+        "node": "notOverbought",
+        "port": "series"
+      }
+    },
+    {
+      "id": "e9",
+      "from": {
+        "node": "notOverbought",
+        "port": "condition"
+      },
+      "to": {
+        "node": "entry",
+        "port": "condition"
+      }
+    },
+    {
+      "id": "e8",
+      "from": {
+        "node": "cross",
+        "port": "condition"
+      },
+      "to": {
+        "node": "entry",
+        "port": "condition"
+      }
+    },
+    {
+      "id": "e10",
+      "from": {
+        "node": "entry",
+        "port": "condition"
+      },
+      "to": {
+        "node": "markers",
+        "port": "condition"
+      }
+    },
+    {
+      "id": "e11",
+      "from": {
+        "node": "entry",
+        "port": "condition"
+      },
+      "to": {
+        "node": "bt",
+        "port": "entry"
+      }
+    },
+    {
+      "id": "e12",
+      "from": {
+        "node": "price",
+        "port": "ohlcv"
+      },
+      "to": {
+        "node": "bt",
+        "port": "ohlcv"
+      }
+    }
+  ]
+}

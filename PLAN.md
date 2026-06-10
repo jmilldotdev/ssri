@@ -99,22 +99,14 @@ soothsayer/
         SKILL.md
 ```
 
-## Initial setup commands
+## Current fastest path
 
 ```bash
-mkdir soothsayer && cd soothsayer
-pnpm init
-pnpm create vite apps/web --template react-ts
-mkdir -p packages/core/src packages/data/src packages/data/fixtures packages/cli/src examples .agents/skills/soothsayer-canvas
-cat > pnpm-workspace.yaml <<'YAML'
-packages:
-  - "apps/*"
-  - "packages/*"
-YAML
-
-pnpm --filter web add @xyflow/react lightweight-charts lucide-react
-pnpm add -w zod commander tsx papaparse
-pnpm add -w -D typescript @types/node
+pnpm install
+pnpm typecheck
+pnpm api
+pnpm sooth thesis "For NVDA, buy momentum when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle." --symbol NVDA --iching --out examples/nvda_momentum.sooth.json
+pnpm sooth eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json
 ```
 
 Root `package.json` scripts:
@@ -122,7 +114,8 @@ Root `package.json` scripts:
 ```json
 {
   "scripts": {
-    "dev": "pnpm --filter web dev",
+    "dev": "pnpm --filter @soothsayer/api dev",
+    "api": "tsx packages/api/src/server.ts",
     "sooth": "tsx packages/cli/src/index.ts",
     "demo:canvas": "tsx packages/cli/src/index.ts thesis \"For NVDA, buy momentum when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle.\" --symbol NVDA --iching --out examples/nvda_momentum.sooth.json"
   }
@@ -160,6 +153,7 @@ packages/core/src/*
 packages/data/src/*
 packages/data/fixtures/*
 packages/cli/src/index.ts
+packages/api/src/server.ts
 examples/*.sooth.json
 .agents/skills/soothsayer-canvas/SKILL.md
 AGENTS.md
@@ -173,6 +167,7 @@ Responsibilities:
 - Implement simple backtest/marker generation.
 - Implement I Ching oracle node.
 - Implement CLI thesis/preset generator.
+- Implement API endpoints that wrap the same core functions.
 - Provide fixture CSVs and a clean data provider interface.
 
 ## Integration contract
@@ -279,12 +274,14 @@ pnpm sooth eval examples/spy.sooth.json --out examples/spy.evaluated.json
 pnpm sooth fetch --symbol NVDA --provider alpha-vantage --out packages/data/fixtures/NVDA.csv
 ```
 
-### API endpoints, only if time allows
+### API endpoints
 
-The API is just a wrapper around the same core functions. Do not build it first.
+The API is just a wrapper around the same core functions.
 
 ```http
+GET  /health
 POST /v1/canvases/from-thesis
+POST /v1/canvases/preset
 POST /v1/canvases/evaluate
 GET  /v1/data/ohlcv?symbol=NVDA&provider=fixture
 ```

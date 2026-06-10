@@ -56,7 +56,7 @@ function momentumCanvas(symbol: string, thesis: string, includeOracle: boolean, 
   ];
 
   if (includeRsi) {
-    nodes.splice(5, 0, node("rsi", "indicator.rsi", "RSI 14", { period: 14 }, 460, 420));
+    nodes.splice(5, 0, node("rsi", "indicator.rsi", "RSI 28", { period: 28 }, 460, 420));
     nodes.splice(6, 0, node("notOverbought", "condition.lt", "RSI below 70", { threshold: 70 }, 720, 380));
     edges.splice(5, 0, edge("e6", "close", "series", "rsi", "series"), edge("e7", "rsi", "series", "notOverbought", "series"), edge("e9", "notOverbought", "condition", "entry", "condition"));
   }

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @soothsayer/web dev",
+    "dev": "pnpm --filter @soothsayer/api dev",
+    "api": "tsx packages/api/src/server.ts",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "sooth": "tsx packages/cli/src/index.ts",

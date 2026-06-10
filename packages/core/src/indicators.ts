@@ -5,7 +5,7 @@ export function sma(series: SeriesPoint[], period: number): SeriesPoint[] {
     if (index + 1 < period) return { time: point.time, value: null };
     const window = series.slice(index + 1 - period, index + 1).map((item) => item.value);
     if (window.some((value) => value == null)) return { time: point.time, value: null };
-    const total = window.reduce((sum, value) => sum + Number(value), 0);
+    const total = (window as number[]).reduce((sum, value) => sum + value, 0);
     return { time: point.time, value: round(total / period) };
   });
 }
