@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { URL } from "node:url";
 import { canvasFromThesis, evaluateCanvas, nodeCatalog, presetCanvas, validateCanvas, type PresetName } from "../../core/src";
@@ -31,6 +32,14 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const symbol = url.searchParams.get("symbol") ?? "SPY";
     const range = url.searchParams.get("range") ?? "2y";
     return json(res, 200, { symbol: symbol.toUpperCase(), range, candles: getFixtureCandles(symbol, range) });
+  }
+
+  if (req.method === "GET" && url.pathname === "/v1/canvases/current") {
+    const current = "examples/current.evaluated.json";
+    const fallback = "examples/full_mvp_canvas.evaluated.json";
+    const path = existsSync(current) ? current : fallback;
+    if (!existsSync(path)) return json(res, 404, { error: "No current or fallback evaluated canvas exists" });
+    return json(res, 200, { source: path, evaluated: JSON.parse(readFileSync(path, "utf8")) });
   }
 
   if (req.method === "GET" && url.pathname === "/v1/nodes") {

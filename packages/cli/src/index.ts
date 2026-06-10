@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
@@ -20,6 +20,20 @@ program
   .requiredOption("--out <path>", "Output .sooth.json path")
   .action((text: string, opts: { symbol?: string; iching?: boolean; out: string }) => {
     writeJson(opts.out, canvasFromThesis(text, { symbol: opts.symbol, iching: opts.iching }));
+  });
+
+program
+  .command("create")
+  .argument("<text>", "English investment thesis")
+  .option("--symbol <symbol>", "Ticker symbol")
+  .option("--iching", "Add deterministic I Ching oracle node")
+  .option("--out <path>", "Output .sooth.json path", "examples/current.sooth.json")
+  .option("--evaluated-out <path>", "Output evaluated JSON path", "examples/current.evaluated.json")
+  .action(async (text: string, opts: { symbol?: string; iching?: boolean; out: string; evaluatedOut: string }) => {
+    const canvas = canvasFromThesis(text, { symbol: opts.symbol, iching: opts.iching });
+    const evaluated = await evaluateCanvas(canvas, getFixtureCandles);
+    writeJson(opts.out, canvas);
+    writeJson(opts.evaluatedOut, evaluated);
   });
 
 program

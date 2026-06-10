@@ -12,7 +12,9 @@ Use pnpm.
 
 ```bash
 pnpm install
+pnpm typecheck
 pnpm api
+pnpm web
 pnpm sooth preset golden-cross --symbol SPY --out examples/spy_golden_cross.sooth.json
 pnpm sooth thesis "Buy NVDA when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle" --symbol NVDA --iching --out examples/nvda_momentum.sooth.json
 pnpm sooth eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json
@@ -100,9 +102,44 @@ When working in `packages/cli`:
 Required commands:
 
 ```bash
+pnpm sooth --help
+pnpm exec sooth --help
 pnpm sooth thesis "..." --symbol NVDA --iching --out examples/nvda_momentum.sooth.json
 pnpm sooth preset golden-cross --symbol SPY --out examples/spy_golden_cross.sooth.json
 pnpm sooth eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json
+```
+
+Agents should prefer `pnpm sooth` from the repo root. `pnpm exec sooth` is available after `pnpm install` through the CLI package `bin` field.
+
+## Web guidance
+
+The web UI package lives at `apps/web` once the frontend scaffold lands.
+
+Launch it with:
+
+```bash
+pnpm web
+```
+
+If `apps/web/package.json` does not exist, `pnpm web` prints a clear backend-only checkout message. Do not claim the web UI is running unless that command starts a dev server and reports a local URL.
+
+Do not scaffold or replace `apps/web` unless the user explicitly asks for frontend implementation. A collaborator owns that flow.
+
+## Disposable flow
+
+For a thesis-to-files run:
+
+```bash
+pnpm sooth create "For NVDA, buy momentum when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle." --symbol NVDA --iching
+pnpm smoke
+```
+
+This writes `examples/current.sooth.json` and `examples/current.evaluated.json`.
+
+For non-interactive Codex validation:
+
+```bash
+pnpm codex:smoke
 ```
 
 ## API guidance
@@ -133,6 +170,23 @@ Preferred creation flow:
 4. Agent posts the same canvas to `POST /v1/canvases/evaluate`.
 
 Do not treat `from-thesis` as a real language parser. It is a recovery/demo shortcut.
+
+## Skill guidance
+
+This repo includes a repo-local Codex skill at `.agents/skills/soothsayer-canvas`.
+
+Use it explicitly with prompts like:
+
+```text
+Use $soothsayer-canvas to create and validate a Soothsayer canvas for: "For NVDA, buy momentum when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle."
+```
+
+Validate/package the skill with:
+
+```bash
+pnpm skill:validate
+pnpm skill:pack
+```
 
 ## Data guidance
 

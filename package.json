@@ -6,8 +6,16 @@
   "scripts": {
     "dev": "pnpm --filter @soothsayer/api dev",
     "api": "tsx packages/api/src/server.ts",
+    "web": "node scripts/start-web.mjs",
+    "inspect": "node scripts/inspect.mjs",
+    "dev:api": "tsx packages/api/src/server.ts",
+    "dev:web": "node scripts/start-web.mjs",
     "build": "pnpm -r build",
+    "smoke": "node scripts/smoke-flow.mjs",
+    "codex:smoke": "codex exec -C . -s workspace-write -a never - < scripts/codex-smoke-prompt.md",
     "typecheck": "pnpm -r typecheck",
+    "skill:validate": "node scripts/validate-skill.mjs",
+    "skill:pack": "mkdir -p dist && cd .agents/skills && zip -qr ../../dist/soothsayer-canvas-skill.zip soothsayer-canvas",
     "sooth": "tsx packages/cli/src/index.ts",
     "demo:canvas": "tsx packages/cli/src/index.ts thesis \"For NVDA, buy momentum when SMA20 crosses above SMA50 and RSI is below 70; ask the oracle.\" --symbol NVDA --iching --out examples/nvda_momentum.sooth.json",
     "demo:eval": "tsx packages/cli/src/index.ts eval examples/nvda_momentum.sooth.json --out examples/nvda_momentum.evaluated.json"
@@ -24,6 +32,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@soothsayer/cli": "workspace:*",
     "@types/node": "^24.10.1",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.2.7",

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Soothsayer Canvas"
+  short_description: "Author and validate Soothsayer graphs"
+  default_prompt: "Use $soothsayer-canvas to create and validate a Soothsayer canvas from this thesis."
+policy:
+  allow_implicit_invocation: true
