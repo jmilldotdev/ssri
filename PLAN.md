@@ -280,13 +280,17 @@ The API is just a wrapper around the same core functions.
 
 ```http
 GET  /health
+GET  /v1/nodes
+POST /v1/canvases
 POST /v1/canvases/from-thesis
 POST /v1/canvases/preset
 POST /v1/canvases/evaluate
 GET  /v1/data/ohlcv?symbol=NVDA&provider=fixture
 ```
 
-Response for `POST /v1/canvases/from-thesis` is a `SoothsayerCanvas`.
+Primary flow: a coding agent converts English into a `SoothsayerCanvas` graph using the schema and node catalog, then posts that graph to `POST /v1/canvases` and `POST /v1/canvases/evaluate`.
+
+`POST /v1/canvases/from-thesis` is only a deterministic demo template helper. It is not the product parser.
 
 ## Thesis-to-canvas parser
 

@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { URL } from "node:url";
-import { canvasFromThesis, evaluateCanvas, parseCanvas, presetCanvas, type PresetName } from "../../core/src";
+import { canvasFromThesis, evaluateCanvas, nodeCatalog, presetCanvas, validateCanvas, type PresetName } from "../../core/src";
 import { getFixtureCandles } from "../../data/src";
 
 const port = Number(process.env.PORT ?? 5050);
@@ -33,11 +33,25 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return json(res, 200, { symbol: symbol.toUpperCase(), range, candles: getFixtureCandles(symbol, range) });
   }
 
+  if (req.method === "GET" && url.pathname === "/v1/nodes") {
+    return json(res, 200, { version: "sooth.canvas.v1", nodes: nodeCatalog });
+  }
+
+  if (req.method === "POST" && url.pathname === "/v1/canvases") {
+    const body = await readJson(req);
+    const validation = validateCanvas(body.canvas ?? body);
+    return json(res, validation.ok ? 200 : 400, validation);
+  }
+
   if (req.method === "POST" && url.pathname === "/v1/canvases/from-thesis") {
     const body = await readJson(req);
     const thesis = stringBody(body.thesis, "Buy SPY when SMA20 crosses above SMA50.");
     const canvas = canvasFromThesis(thesis, { symbol: optionalString(body.symbol), iching: Boolean(body.iching) });
-    return json(res, 200, { canvas });
+    return json(res, 200, {
+      mode: "template",
+      warning: "This endpoint is a deterministic demo template generator, not a general natural-language parser. Agents should produce and POST a canvas graph directly.",
+      canvas
+    });
   }
 
   if (req.method === "POST" && url.pathname === "/v1/canvases/preset") {
@@ -49,7 +63,9 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
 
   if (req.method === "POST" && url.pathname === "/v1/canvases/evaluate") {
     const body = await readJson(req);
-    const canvas = parseCanvas(body.canvas ?? body);
+    const validation = validateCanvas(body.canvas ?? body);
+    if (!validation.ok || !validation.canvas) return json(res, 400, validation);
+    const canvas = validation.canvas;
     const evaluated = await evaluateCanvas(canvas, getFixtureCandles);
     return json(res, 200, evaluated);
   }
