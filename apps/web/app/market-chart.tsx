@@ -20,6 +20,28 @@ type MarketChartProps = {
   datasets: SymbolDataset[];
 };
 
+type DecisionNodeKind = "source" | "signal" | "condition" | "decision" | "output";
+
+type DecisionNode = {
+  id: string;
+  label: string;
+  kind: DecisionNodeKind;
+  x: number;
+  y: number;
+  weight: number;
+  value: number;
+  parentId?: string;
+  summary: string;
+};
+
+type DecisionEdge = {
+  id: string;
+  source: string;
+  target: string;
+  weight: number;
+  label: string;
+};
+
 const SYMBOL_NAMES: Record<string, string> = {
   MU: "Micron Technology, Inc.",
   NVDA: "NVIDIA Corporation",
@@ -34,6 +56,83 @@ const PRICE_BOTTOM = HEIGHT - MARGIN.bottom - VOLUME_HEIGHT;
 const VOLUME_TOP = PRICE_BOTTOM + 16;
 const PLOT_WIDTH = WIDTH - MARGIN.left - MARGIN.right;
 const PRICE_HEIGHT = PRICE_BOTTOM - MARGIN.top;
+const DECISION_CANVAS_WIDTH = 1160;
+const DECISION_CANVAS_HEIGHT = 520;
+
+const INITIAL_DECISION_NODES: DecisionNode[] = [
+  {
+    id: "price",
+    label: "Price",
+    kind: "source",
+    x: 52,
+    y: 68,
+    weight: 1,
+    value: 72,
+    summary: "Fixture OHLCV feed for the selected ticker.",
+  },
+  {
+    id: "sma-cross",
+    label: "SMA20 > SMA50",
+    kind: "signal",
+    x: 300,
+    y: 42,
+    weight: 1,
+    value: 78,
+    parentId: "momentum",
+    summary: "Momentum sub-node: short average is above the slow average.",
+  },
+  {
+    id: "rsi-cap",
+    label: "RSI < 70",
+    kind: "condition",
+    x: 300,
+    y: 178,
+    weight: 0.8,
+    value: 64,
+    parentId: "momentum",
+    summary: "Risk sub-node: avoids overbought entries.",
+  },
+  {
+    id: "oracle",
+    label: "Oracle stance",
+    kind: "condition",
+    x: 300,
+    y: 314,
+    weight: 0.35,
+    value: 42,
+    parentId: "momentum",
+    summary: "Playful uncertainty annotation, not direct trade logic.",
+  },
+  {
+    id: "decision",
+    label: "Entry decision",
+    kind: "decision",
+    x: 642,
+    y: 162,
+    weight: 1,
+    value: 50,
+    summary: "Combines weighted evidence into a single decision score.",
+  },
+  {
+    id: "output",
+    label: "Canvas output",
+    kind: "output",
+    x: 930,
+    y: 162,
+    weight: 1,
+    value: 50,
+    summary: "Final generated action, confidence, and explanation.",
+  },
+];
+
+const INITIAL_DECISION_EDGES: DecisionEdge[] = [
+  { id: "price-sma", source: "price", target: "sma-cross", weight: 1, label: "close" },
+  { id: "price-rsi", source: "price", target: "rsi-cap", weight: 0.9, label: "close" },
+  { id: "sma-decision", source: "sma-cross", target: "decision", weight: 0.72, label: "trend" },
+  { id: "rsi-decision", source: "rsi-cap", target: "decision", weight: 0.48, label: "risk" },
+  { id: "oracle-decision", source: "oracle", target: "decision", weight: 0.18, label: "context" },
+  { id: "decision-output", source: "decision", target: "output", weight: 1, label: "score" },
+];
 
 function formatPrice(value: number) {
   return value.toLocaleString("en-US", {
@@ -58,11 +157,25 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-export function MarketChart({ datasets }: MarketChartProps) {
+function formatWeight(value: number) {
+  return value.toFixed(2).replace(/\.00$/, "");
+}
+
+function nodeCenter(node: DecisionNode) {
+  return {
+    x: node.x + 96,
+    y: node.y + 48,
+  };
+}
+
+export default function MarketChart({ datasets }: MarketChartProps) {
   const initialSymbol = datasets.some((dataset) => dataset.symbol === "MU")
     ? "MU"
     : datasets[0]?.symbol ?? "";
   const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
+  const [decisionNodes, setDecisionNodes] = useState(INITIAL_DECISION_NODES);
+  const [decisionEdges, setDecisionEdges] = useState(INITIAL_DECISION_EDGES);
+  const [selectedDecisionNodeId, setSelectedDecisionNodeId] = useState("decision");
 
   const dataset =
     datasets.find((candidate) => candidate.symbol === selectedSymbol) ?? datasets[0];
@@ -114,6 +227,97 @@ export function MarketChart({ datasets }: MarketChartProps) {
     };
   }, [dataset]);
 
+  const decisionModel = useMemo(() => {
+    const nodesById = new Map(decisionNodes.map((node) => [node.id, node]));
+    const inputEdges = decisionEdges.filter((edge) => edge.target === "decision");
+    const weightedSignal = inputEdges.reduce((total, edge) => {
+      const source = nodesById.get(edge.source);
+
+      if (!source) {
+        return total;
+      }
+
+      return total + (source.value / 100) * source.weight * edge.weight;
+    }, 0);
+    const weightTotal = inputEdges.reduce((total, edge) => {
+      const source = nodesById.get(edge.source);
+      return total + Math.abs(edge.weight * (source?.weight ?? 1));
+    }, 0);
+    const normalizedScore = weightTotal > 0 ? (weightedSignal / weightTotal) * 100 : 50;
+    const decisionScore = Math.round(clamp(normalizedScore, 0, 100));
+    const stance =
+      decisionScore >= 68 ? "Generate buy setup" : decisionScore >= 50 ? "Watchlist" : "Stand down";
+
+    return {
+      decisionScore,
+      stance,
+      nodesById,
+      selectedNode: nodesById.get(selectedDecisionNodeId) ?? decisionNodes[0],
+    };
+  }, [decisionEdges, decisionNodes, selectedDecisionNodeId]);
+
+  const displayNodes = useMemo(
+    () =>
+      decisionNodes.map((node) =>
+        node.id === "decision" || node.id === "output"
+          ? { ...node, value: decisionModel.decisionScore }
+          : node,
+      ),
+    [decisionModel.decisionScore, decisionNodes],
+  );
+
+  const addDecisionNode = (kind: DecisionNodeKind) => {
+    const createdCount = decisionNodes.filter((node) => node.id.startsWith("custom-")).length + 1;
+    const id = `custom-${createdCount}`;
+    const nextNode: DecisionNode = {
+      id,
+      label:
+        kind === "decision"
+          ? `Decision ${createdCount}`
+          : kind === "condition"
+            ? `Condition ${createdCount}`
+            : `Signal ${createdCount}`,
+      kind,
+      x: 78 + ((createdCount - 1) % 3) * 170,
+      y: 390,
+      weight: 0.5,
+      value: 50,
+      parentId: "momentum",
+      summary: "New editable evidence node connected into the entry decision.",
+    };
+    const nextEdge: DecisionEdge = {
+      id: `${id}-decision`,
+      source: id,
+      target: "decision",
+      weight: 0.35,
+      label: "input",
+    };
+
+    setDecisionNodes((nodes) => [...nodes, nextNode]);
+    setDecisionEdges((edges) => [...edges, nextEdge]);
+    setSelectedDecisionNodeId(id);
+  };
+
+  const updateSelectedNode = (updates: Partial<DecisionNode>) => {
+    setDecisionNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === selectedDecisionNodeId ? { ...node, ...updates } : node,
+      ),
+    );
+  };
+
+  const updateEdgeWeight = (edgeId: string, weight: number) => {
+    setDecisionEdges((edges) =>
+      edges.map((edge) => (edge.id === edgeId ? { ...edge, weight } : edge)),
+    );
+  };
+
+  const selectedIncomingEdges = decisionEdges.filter(
+    (edge) =>
+      edge.source === decisionModel.selectedNode?.id ||
+      edge.target === decisionModel.selectedNode?.id,
+  );
+
   if (!dataset) {
     return (
       <main className="market-page">
@@ -132,16 +336,6 @@ export function MarketChart({ datasets }: MarketChartProps) {
   return (
     <main className="market-page">
       <header className="market-toolbar">
-        <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">
-            S
-          </span>
-          <div>
-            <p className="eyebrow">Soothsayer</p>
-            <h1>Market Canvas</h1>
-          </div>
-        </div>
-
         <label className="symbol-control">
           <span>Symbol</span>
           <select
@@ -156,6 +350,170 @@ export function MarketChart({ datasets }: MarketChartProps) {
           </select>
         </label>
       </header>
+
+      <section className="decision-surface" aria-label="Decision node canvas">
+        <div className="decision-shell">
+          <div className="decision-main">
+            <div className="decision-topbar">
+              <div>
+                <p className="panel-eyebrow">Decision canvas</p>
+                <h2>Weighted node model</h2>
+              </div>
+              <div className="node-actions" aria-label="Add decision nodes">
+                <button type="button" onClick={() => addDecisionNode("signal")}>
+                  + Signal
+                </button>
+                <button type="button" onClick={() => addDecisionNode("condition")}>
+                  + Condition
+                </button>
+                <button type="button" onClick={() => addDecisionNode("decision")}>
+                  + Decision
+                </button>
+              </div>
+            </div>
+
+            <div className="decision-canvas">
+              <div className="node-group momentum-group">
+                <span>Momentum subnodes</span>
+              </div>
+              <svg
+                className="decision-edges"
+                viewBox={`0 0 ${DECISION_CANVAS_WIDTH} ${DECISION_CANVAS_HEIGHT}`}
+                aria-hidden="true"
+              >
+                <defs>
+                  <marker
+                    id="edge-arrow"
+                    markerWidth="10"
+                    markerHeight="10"
+                    refX="8"
+                    refY="3"
+                    orient="auto"
+                    markerUnits="strokeWidth"
+                  >
+                    <path d="M0,0 L0,6 L8,3 z" className="edge-arrow" />
+                  </marker>
+                </defs>
+                {decisionEdges.map((edge) => {
+                  const source = displayNodes.find((node) => node.id === edge.source);
+                  const target = displayNodes.find((node) => node.id === edge.target);
+
+                  if (!source || !target) {
+                    return null;
+                  }
+
+                  const start = nodeCenter(source);
+                  const end = nodeCenter(target);
+                  const midX = (start.x + end.x) / 2;
+                  const midY = (start.y + end.y) / 2;
+                  const controlOffset = Math.max(40, Math.abs(end.x - start.x) * 0.28);
+                  const path = `M ${start.x} ${start.y} C ${start.x + controlOffset} ${start.y}, ${end.x - controlOffset} ${end.y}, ${end.x} ${end.y}`;
+
+                  return (
+                    <g key={edge.id} className="decision-edge">
+                      <path
+                        d={path}
+                        className={edge.weight < 0 ? "edge-path negative-edge" : "edge-path"}
+                        markerEnd="url(#edge-arrow)"
+                      />
+                      <foreignObject x={midX - 42} y={midY - 16} width="84" height="30">
+                        <div className="edge-label">
+                          {edge.label} {formatWeight(edge.weight)}
+                        </div>
+                      </foreignObject>
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {displayNodes.map((node) => (
+                <button
+                  type="button"
+                  key={node.id}
+                  className={`decision-node ${node.kind} ${
+                    selectedDecisionNodeId === node.id ? "selected" : ""
+                  }`}
+                  style={{ left: node.x, top: node.y }}
+                  onClick={() => setSelectedDecisionNodeId(node.id)}
+                >
+                  <span className="node-kind">{node.kind}</span>
+                  <strong>{node.label}</strong>
+                  <span>{node.summary}</span>
+                  <meter min="0" max="100" value={node.value} />
+                  <small>
+                    value {Math.round(node.value)} · weight {formatWeight(node.weight)}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <aside className="decision-inspector" aria-label="Selected node inspector">
+            <p className="panel-eyebrow">Inspector</p>
+            <h2>{decisionModel.selectedNode?.label ?? "Node"}</h2>
+            <div className="output-score">
+              <span>{decisionModel.stance}</span>
+              <strong>{decisionModel.decisionScore}/100</strong>
+            </div>
+
+            {decisionModel.selectedNode ? (
+              <div className="inspector-controls">
+                <label>
+                  Label
+                  <input
+                    value={decisionModel.selectedNode.label}
+                    onChange={(event) => updateSelectedNode({ label: event.target.value })}
+                  />
+                </label>
+                <label>
+                  Node value
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={decisionModel.selectedNode.value}
+                    onChange={(event) =>
+                      updateSelectedNode({ value: Number(event.target.value) })
+                    }
+                  />
+                </label>
+                <label>
+                  Node weight
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    value={decisionModel.selectedNode.weight}
+                    onChange={(event) =>
+                      updateSelectedNode({ weight: Number(event.target.value) })
+                    }
+                  />
+                </label>
+
+                <div className="edge-editor">
+                  <span>Connected weights</span>
+                  {selectedIncomingEdges.map((edge) => (
+                    <label key={edge.id}>
+                      {edge.source} → {edge.target}
+                      <input
+                        type="range"
+                        min="-1"
+                        max="1"
+                        step="0.05"
+                        value={edge.weight}
+                        onChange={(event) =>
+                          updateEdgeWeight(edge.id, Number(event.target.value))
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      </section>
 
       <section className="chart-surface" aria-label={`${dataset.symbol} candlestick chart`}>
         <div className="chart-header">

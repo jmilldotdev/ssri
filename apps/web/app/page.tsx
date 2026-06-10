@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { MarketChart, type Candle, type SymbolDataset } from "./market-chart";
+import MarketChart, { type Candle, type SymbolDataset } from "./market-chart";
 
 const SYMBOLS = ["NVDA", "SPY", "MU"] as const;
 
