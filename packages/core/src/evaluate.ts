@@ -1,6 +1,7 @@
 import { all, closeSeries, crossesAbove, lt, rsi, sma } from "./indicators";
 import { consultOracle } from "./iching";
-import { parseCanvas, type Candle, type EvaluatedCanvas, type SeriesPoint, type SoothsayerCanvas } from "./schema";
+import { type Candle, type EvaluatedCanvas, type SeriesPoint, type SoothsayerCanvas } from "./schema";
+import { assertValidCanvas } from "./validate";
 
 export type CandleLoader = (symbol: string, range: string) => Promise<Candle[]> | Candle[];
 
@@ -11,7 +12,7 @@ type NodeValue =
   | { kind: "oracle"; value: EvaluatedCanvas["oracle"] };
 
 export async function evaluateCanvas(canvasInput: SoothsayerCanvas, loadCandles: CandleLoader): Promise<EvaluatedCanvas> {
-  const canvas = parseCanvas(canvasInput);
+  const canvas = assertValidCanvas(canvasInput);
   const values = new Map<string, NodeValue>();
   const overlays: EvaluatedCanvas["chart"]["overlays"] = [];
   let candles: Candle[] = [];

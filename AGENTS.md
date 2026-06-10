@@ -119,9 +119,20 @@ Endpoints:
 
 - `GET /health`
 - `GET /v1/data/ohlcv?symbol=NVDA&range=2y`
-- `POST /v1/canvases/from-thesis` with `{ "thesis": "...", "symbol": "NVDA", "iching": true }`
+- `GET /v1/nodes` returns the node catalog an agent should use to author canvases
+- `POST /v1/canvases` validates a posted canvas graph
+- `POST /v1/canvases/from-thesis` is only a deterministic demo template helper
 - `POST /v1/canvases/preset` with `{ "name": "golden-cross", "symbol": "SPY" }`
 - `POST /v1/canvases/evaluate` with either a canvas body or `{ "canvas": ... }`
+
+Preferred creation flow:
+
+1. Agent reads `GET /v1/nodes`, `packages/core/src/schema.ts`, and this file.
+2. Agent turns the English thesis into a `SoothsayerCanvas` graph.
+3. Agent posts the canvas to `POST /v1/canvases` for validation.
+4. Agent posts the same canvas to `POST /v1/canvases/evaluate`.
+
+Do not treat `from-thesis` as a real language parser. It is a recovery/demo shortcut.
 
 ## Data guidance
 
