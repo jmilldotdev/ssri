@@ -360,3 +360,169 @@ h1 {
     height: 64vh;
   }
 }
+
+.decision-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.decision-chart-pane {
+  min-width: 0;
+}
+
+.decision-chart-pane .market-page {
+  padding-right: 10px;
+}
+
+.decision-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 100vh;
+  overflow: auto;
+  border-left: 1px solid var(--line);
+  background: #f8fafc;
+  padding: 16px;
+}
+
+.decision-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.decision-card h2,
+.decision-card h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.decision-card h2 {
+  margin-top: 10px;
+  font-size: 20px;
+}
+
+.decision-card h3 {
+  font-size: 14px;
+}
+
+.decision-card p {
+  margin: 8px 0 0;
+  color: #475467;
+  line-height: 1.45;
+}
+
+.decision-hero {
+  position: relative;
+}
+
+.decision-badge {
+  display: inline-grid;
+  min-width: 72px;
+  height: 30px;
+  place-items: center;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.decision-call {
+  background: var(--green);
+}
+
+.decision-put {
+  background: var(--red);
+}
+
+.decision-hold {
+  background: #475467;
+}
+
+.decision-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 14px;
+  border-top: 1px solid #e5e9f0;
+  padding-top: 12px;
+}
+
+.decision-score span,
+.weight-control span,
+.level-list span,
+.signal-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.decision-score strong {
+  font-size: 26px;
+}
+
+.weight-control {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.weight-control span {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.weight-control input {
+  width: 100%;
+}
+
+.signal-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.signal-list article {
+  border-top: 1px solid #edf1f5;
+  padding-top: 10px;
+}
+
+.signal-list article div,
+.level-list div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.signal-list article div span {
+  color: #344054;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.level-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.level-list div {
+  border-top: 1px solid #edf1f5;
+  padding-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .decision-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-panel {
+    max-height: none;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}

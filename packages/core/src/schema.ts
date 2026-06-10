@@ -12,7 +12,12 @@ export const nodeTypes = [
   "logic.all",
   "signal.buyMarkers",
   "backtest.longOnly",
-  "oracle.iching"
+  "oracle.iching",
+  "input.peValue",
+  "input.iching",
+  "score.weightedSignal",
+  "output.levels",
+  "output.direction"
 ] as const;
 
 export type SoothNodeType = (typeof nodeTypes)[number];
@@ -77,6 +82,52 @@ export type EvaluatedCanvas = {
     hitRatePct: number;
     avgTradePct: number;
   };
+  oracle?: OracleOutput;
+};
+
+export type ChartAnnotation =
+  | {
+      type: "horizontalLevel";
+      price: number;
+      label: string;
+      intent: "support" | "resistance" | "target" | "stop" | "fairValue";
+    }
+  | {
+      type: "marker";
+      time: string;
+      price: number;
+      label: string;
+      intent: "gapUp" | "gapDown" | "entry" | "warning";
+    };
+
+export type DecisionSignal = {
+  nodeId: string;
+  label: string;
+  kind: "peValue" | "iching";
+  value: string | number;
+  score: number;
+  weight: number;
+  weightedScore: number;
+  explanation: string;
+};
+
+export type DecisionLevel = {
+  price: number;
+  label: string;
+  intent: "support" | "resistance" | "target" | "stop" | "fairValue";
+};
+
+export type EvaluatedDecisionGraph = {
+  canvas: SoothsayerCanvas;
+  symbol: string;
+  thesis: string;
+  lastClose: number;
+  signals: DecisionSignal[];
+  score: number;
+  decision: "call" | "put" | "hold";
+  summary: string;
+  levels: DecisionLevel[];
+  chartAnnotations: ChartAnnotation[];
   oracle?: OracleOutput;
 };
 

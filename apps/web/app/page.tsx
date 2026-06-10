@@ -28,10 +28,10 @@ function parseFixtureCsv(symbol: string): SymbolDataset {
 
   const candles: Candle[] = rows
     .map((row) => {
-      const [timestamp, open, high, low, close, volume] = row.split(",");
+      const [date, open, high, low, close, volume] = row.split(",");
 
       return {
-        timestamp,
+        timestamp: date,
         open: Number(open),
         high: Number(high),
         low: Number(low),

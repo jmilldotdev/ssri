@@ -1,0 +1,234 @@
+{
+  "canvas": {
+    "version": "sooth.canvas.v1",
+    "meta": {
+      "title": "NVDA decision graph",
+      "thesis": "For NVDA, use PE value and I Ching risk posture to decide call, put, or hold, then generate chart levels.",
+      "createdBy": "agent"
+    },
+    "nodes": [
+      {
+        "id": "price",
+        "type": "data.ohlcv",
+        "label": "NVDA daily candles",
+        "params": {
+          "symbol": "NVDA",
+          "provider": "fixture",
+          "range": "2y"
+        },
+        "position": {
+          "x": 0,
+          "y": 120
+        }
+      },
+      {
+        "id": "pe",
+        "type": "input.peValue",
+        "label": "PE value",
+        "params": {
+          "symbol": "NVDA",
+          "fairPe": 25,
+          "expensivePe": 45,
+          "weight": 0.45
+        },
+        "position": {
+          "x": 260,
+          "y": 40
+        }
+      },
+      {
+        "id": "iching",
+        "type": "input.iching",
+        "label": "I Ching risk posture",
+        "params": {
+          "question": "Does the setup favor action or patience?",
+          "seed": "NVDA-decision",
+          "weight": 0.2
+        },
+        "position": {
+          "x": 260,
+          "y": 220
+        }
+      },
+      {
+        "id": "score",
+        "type": "score.weightedSignal",
+        "label": "Weighted signal score",
+        "params": {},
+        "position": {
+          "x": 560,
+          "y": 120
+        }
+      },
+      {
+        "id": "levels",
+        "type": "output.levels",
+        "label": "Generated chart levels",
+        "params": {
+          "lookbackDays": 20,
+          "atrDays": 14
+        },
+        "position": {
+          "x": 860,
+          "y": 40
+        }
+      },
+      {
+        "id": "direction",
+        "type": "output.direction",
+        "label": "Call / put / hold",
+        "params": {
+          "callThreshold": 0.18,
+          "putThreshold": -0.18
+        },
+        "position": {
+          "x": 860,
+          "y": 220
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "from": {
+          "node": "price",
+          "port": "ohlcv"
+        },
+        "to": {
+          "node": "levels",
+          "port": "ohlcv"
+        }
+      },
+      {
+        "id": "e2",
+        "from": {
+          "node": "pe",
+          "port": "signal"
+        },
+        "to": {
+          "node": "score",
+          "port": "signal"
+        }
+      },
+      {
+        "id": "e5",
+        "from": {
+          "node": "iching",
+          "port": "signal"
+        },
+        "to": {
+          "node": "score",
+          "port": "signal"
+        }
+      },
+      {
+        "id": "e3",
+        "from": {
+          "node": "score",
+          "port": "score"
+        },
+        "to": {
+          "node": "levels",
+          "port": "score"
+        }
+      },
+      {
+        "id": "e4",
+        "from": {
+          "node": "score",
+          "port": "score"
+        },
+        "to": {
+          "node": "direction",
+          "port": "score"
+        }
+      }
+    ]
+  },
+  "symbol": "NVDA",
+  "thesis": "For NVDA, use PE value and I Ching risk posture to decide call, put, or hold, then generate chart levels.",
+  "lastClose": 208.19,
+  "signals": [
+    {
+      "nodeId": "pe",
+      "label": "PE value",
+      "kind": "peValue",
+      "value": 42.1,
+      "score": -0.33,
+      "weight": 0.45,
+      "weightedScore": -0.15,
+      "explanation": "PE is between fair and expensive thresholds, so valuation is mildly cautious."
+    },
+    {
+      "nodeId": "iching",
+      "label": "I Ching risk posture",
+      "kind": "iching",
+      "value": "wait",
+      "score": -0.05,
+      "weight": 0.2,
+      "weightedScore": -0.01,
+      "explanation": "The pattern has promise, but patience is the cleaner risk posture."
+    }
+  ],
+  "score": -0.16,
+  "decision": "hold",
+  "summary": "Hold: weighted score -0.16 is not strong enough; wait for a cleaner setup.",
+  "levels": [
+    {
+      "price": 199.34,
+      "label": "Recent support",
+      "intent": "support"
+    },
+    {
+      "price": 236.54,
+      "label": "Recent resistance",
+      "intent": "resistance"
+    },
+    {
+      "price": 244.4,
+      "label": "Breakout trigger",
+      "intent": "target"
+    },
+    {
+      "price": 198.76,
+      "label": "Invalidation",
+      "intent": "stop"
+    }
+  ],
+  "chartAnnotations": [
+    {
+      "type": "horizontalLevel",
+      "price": 199.34,
+      "label": "Recent support",
+      "intent": "support"
+    },
+    {
+      "type": "horizontalLevel",
+      "price": 236.54,
+      "label": "Recent resistance",
+      "intent": "resistance"
+    },
+    {
+      "type": "horizontalLevel",
+      "price": 244.4,
+      "label": "Breakout trigger",
+      "intent": "target"
+    },
+    {
+      "type": "horizontalLevel",
+      "price": 198.76,
+      "label": "Invalidation",
+      "intent": "stop"
+    }
+  ],
+  "oracle": {
+    "hexagramNumber": 17,
+    "hexagramName": "The Receptive",
+    "changingLines": [
+      2,
+      4
+    ],
+    "stance": "wait",
+    "note": "The pattern has promise, but patience is the cleaner risk posture."
+  }
+}

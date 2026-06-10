@@ -1,0 +1,20 @@
+{
+  "NVDA": {
+    "symbol": "NVDA",
+    "pe": 42.1,
+    "sector": "Technology",
+    "asOf": "2026-06-10"
+  },
+  "MU": {
+    "symbol": "MU",
+    "pe": 18.4,
+    "sector": "Technology",
+    "asOf": "2026-06-10"
+  },
+  "SPY": {
+    "symbol": "SPY",
+    "pe": 27.8,
+    "sector": "Index",
+    "asOf": "2026-06-10"
+  }
+}

@@ -89,6 +89,46 @@ export const nodeCatalog: NodeCatalogEntry[] = [
     outputs: ["oracle"],
     params: { question: "string", seed: "string" },
     description: "Adds deterministic uncertainty/risk annotation. It does not create trading signals."
+  },
+  {
+    type: "input.peValue",
+    label: "PE Value Input",
+    inputs: [],
+    outputs: ["signal"],
+    params: { symbol: "string", fairPe: "number", expensivePe: "number", weight: "number" },
+    description: "Scores valuation context from a fixture PE ratio. Lower PE versus configured thresholds contributes bullish context; high PE reduces score."
+  },
+  {
+    type: "input.iching",
+    label: "I Ching Input",
+    inputs: [],
+    outputs: ["signal"],
+    params: { question: "string", seed: "string", weight: "number" },
+    description: "Converts deterministic I Ching stance into a risk-posture score."
+  },
+  {
+    type: "score.weightedSignal",
+    label: "Weighted Signal Score",
+    inputs: ["signal"],
+    outputs: ["score"],
+    params: {},
+    description: "Combines signal inputs by weighted contribution."
+  },
+  {
+    type: "output.levels",
+    label: "Generated Levels",
+    inputs: ["ohlcv", "score"],
+    outputs: ["levels", "chartAnnotations"],
+    params: { lookbackDays: "number", atrDays: "number" },
+    description: "Generates demo support, resistance, target, and invalidation levels from recent candles."
+  },
+  {
+    type: "output.direction",
+    label: "Call Put Hold",
+    inputs: ["score"],
+    outputs: ["decision"],
+    params: { callThreshold: "number", putThreshold: "number" },
+    description: "Maps a combined score to call, put, or hold using hardcoded thresholds."
   }
 ];
 

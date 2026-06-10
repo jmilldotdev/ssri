@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { URL } from "node:url";
-import { canvasFromThesis, evaluateCanvas, nodeCatalog, presetCanvas, validateCanvas, type PresetName } from "../../core/src";
-import { getFixtureCandles } from "../../data/src";
+import { canvasFromThesis, createDecisionCanvas, evaluateCanvas, evaluateDecisionGraph, nodeCatalog, presetCanvas, validateCanvas, type PresetName } from "../../core/src";
+import { getFixtureCandles, getFixtureFundamentals } from "../../data/src";
 
 const port = Number(process.env.PORT ?? 5050);
 
@@ -76,6 +76,22 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!validation.ok || !validation.canvas) return json(res, 400, validation);
     const canvas = validation.canvas;
     const evaluated = await evaluateCanvas(canvas, getFixtureCandles);
+    return json(res, 200, evaluated);
+  }
+
+  if (req.method === "POST" && url.pathname === "/v1/decisions/from-thesis") {
+    const body = await readJson(req);
+    const thesis = stringBody(body.thesis, "For SPY, evaluate PE and I Ching risk posture.");
+    const canvas = createDecisionCanvas(thesis, { symbol: optionalString(body.symbol), iching: Boolean(body.iching ?? true) });
+    const evaluated = await evaluateDecisionGraph(canvas, getFixtureCandles, getFixtureFundamentals);
+    return json(res, 200, evaluated);
+  }
+
+  if (req.method === "POST" && url.pathname === "/v1/decisions/evaluate") {
+    const body = await readJson(req);
+    const validation = validateCanvas(body.canvas ?? body);
+    if (!validation.ok || !validation.canvas) return json(res, 400, validation);
+    const evaluated = await evaluateDecisionGraph(validation.canvas, getFixtureCandles, getFixtureFundamentals);
     return json(res, 200, evaluated);
   }
 

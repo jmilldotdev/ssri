@@ -2,8 +2,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
-import { canvasFromThesis, evaluateCanvas, parseCanvas, presetCanvas, type PresetName } from "../../core/src";
-import { getFixtureCandles, syntheticCandles } from "../../data/src";
+import { canvasFromThesis, createDecisionCanvas, evaluateCanvas, evaluateDecisionGraph, parseCanvas, presetCanvas, type PresetName } from "../../core/src";
+import { getFixtureCandles, getFixtureFundamentals, serializeCandles, syntheticCandles } from "../../data/src";
 
 const program = new Command();
 
@@ -46,6 +46,20 @@ program
   });
 
 program
+  .command("decision")
+  .argument("<text>", "English investment thesis")
+  .option("--symbol <symbol>", "Ticker symbol")
+  .option("--iching", "Add deterministic I Ching input")
+  .option("--out <path>", "Output decision canvas path", "examples/current.decision.sooth.json")
+  .option("--evaluated-out <path>", "Output evaluated decision JSON path", "examples/current.decision.json")
+  .action(async (text: string, opts: { symbol?: string; iching?: boolean; out: string; evaluatedOut: string }) => {
+    const canvas = createDecisionCanvas(text, { symbol: opts.symbol, iching: opts.iching });
+    const evaluated = await evaluateDecisionGraph(canvas, getFixtureCandles, getFixtureFundamentals);
+    writeJson(opts.out, canvas);
+    writeJson(opts.evaluatedOut, evaluated);
+  });
+
+program
   .command("eval")
   .argument("<path>", "Input .sooth.json path")
   .requiredOption("--out <path>", "Output evaluated JSON path")
@@ -61,10 +75,7 @@ program
   .requiredOption("--symbol <symbol>", "Ticker symbol")
   .requiredOption("--out <path>", "Output CSV path")
   .action((opts: { symbol: string; out: string }) => {
-    const rows = syntheticCandles(opts.symbol).map((candle) =>
-      [candle.date, candle.open, candle.high, candle.low, candle.close, candle.volume ?? 0].join(",")
-    );
-    writeText(opts.out, ["date,open,high,low,close,volume", ...rows].join("\n") + "\n");
+    writeText(opts.out, serializeCandles(syntheticCandles(opts.symbol)));
   });
 
 program.parseAsync();

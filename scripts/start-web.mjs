@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { spawn } from "node:child_process";
 
 const webPackage = "apps/web/package.json";
+const nextBin = "apps/web/node_modules/.bin/next";
 
 if (!existsSync(webPackage)) {
   console.error("apps/web is not scaffolded in this checkout yet.");
@@ -9,9 +10,21 @@ if (!existsSync(webPackage)) {
   process.exit(1);
 }
 
-const child = spawn("pnpm", ["--dir", "apps/web", "dev"], {
+if (!existsSync(nextBin)) {
+  console.error("apps/web dependencies are not installed yet.");
+  console.error("Run `cd apps/web && pnpm install`, then retry `pnpm web`.");
+  process.exit(1);
+}
+
+const child = spawn("./node_modules/.bin/next", ["dev", "--webpack"], {
+  cwd: "apps/web",
   stdio: "inherit",
   shell: false
+});
+
+child.on("error", (error) => {
+  console.error(`Failed to start apps/web dev server: ${error.message}`);
+  process.exit(1);
 });
 
 child.on("exit", (code, signal) => {

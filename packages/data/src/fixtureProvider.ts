@@ -24,6 +24,11 @@ export function parseCandles(csv: string): Candle[] {
   const rows = csv.trim().split(/\r?\n/);
   const header = rows.shift()?.split(",").map((part) => part.trim().toLowerCase()) ?? [];
   const index = (name: string) => header.indexOf(name);
+  const required = ["date", "open", "high", "low", "close"];
+  const missing = required.filter((name) => index(name) < 0);
+  if (missing.length) {
+    throw new Error(`Fixture CSV must use canonical header date,open,high,low,close,volume. Missing: ${missing.join(", ")}`);
+  }
 
   return rows
     .map((row) => row.split(",").map((part) => part.trim()))
